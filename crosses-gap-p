@@ -1,0 +1,80 @@
+#!./eracs -b -s ./crosses-gap-p
+!#
+
+(use-modules
+ (emacsy emacsy)
+ (logging)
+ (ice-9 match)
+ (system repl error-handling)
+ (ice-9 getopt-long))
+
+(define option-spec '((width (single-char #\w) (value #t))
+                      (robot-width (single-char #\W) (value #t))
+                      (depth (single-char #\d) (value #t)) 
+                      (help (single-char #\h) (value #f))
+                      (eval-time (single-char #\t) (value #t))
+                      ))
+                    
+(define options (getopt-long (program-arguments) option-spec))
+(define args (option-ref options '() '()))
+
+(define (help)
+  (format (current-error-port) "usage: crosses-gap-p [-h] [-w ditch width] [-d ditch depth] [-t eval-seconds] <file.bin> ...~%")
+  (format (current-error-port) "usage: crosses-gap-p [-h] [-w ditch width] [-d ditch depth] [-t eval-seconds] dirs <dir1> <dir2>~%")
+  (quit))
+
+(when (or (option-ref options 'help #f) (null? args))
+  (help))
+
+(define* (crosses-gap? input)
+  (let ((weights (if (string? input) 
+                     (begin
+                       (format #t "Checking ~a~%" input)
+                       (read-brain input))
+                     ;; else, assume it's a vector.
+                     input)))
+      (robot-crosses-gap? weights)))
+
+(define (score-aggregate fn inputs)
+    (receive (accum report) (make-averaging-fns fn)
+      (for-each accum inputs)
+      (report)))
+
+(define (crosses-gaps-aggregate inputs)
+  (let ((p (score-aggregate 
+            (lambda (a) (if (crosses-gap? a) 1.0 0.0)) inputs)))
+    (format #t "Success rate is ~1,2f percent.~%" (* 100 p))
+    p))
+
+(define (files-in-dir dirname pattern)
+  (let ((dir (opendir dirname))
+        (filenames '()))
+    (let loop ((filename (readdir dir)))
+      (when (not (eof-object? filename))
+        (if (string-match pattern filename)
+            (cons! (format #f "~a/~a" dirname filename) filenames))
+        (loop (readdir dir))))
+    (closedir dir)
+    filenames))
+
+(call-with-error-handling 
+ (lambda ()
+   (set! *ditch-width* (read-from-string (option-ref options 'width "3.")))
+   (set! *ditch-depth* (read-from-string (option-ref options 'depth "3.")))
+   (set! *robot-width* (read-from-string (option-ref options 'robot-width "4.")))
+   (set! eval-robot-time (read-from-string (option-ref options 'eval-time "20.")))
+   (set! *target-position* (vector 0. 4. (- -3. *ditch-width*)))
+   (set! init-scene init-ditch-scene)
+   (update-jump-obstacles)
+   (set! obstacles *jump-obstacles*)
+
+   
+   (if (string=? (car args) "dirs")
+       (let ((p (score-aggregate (lambda (dir) (if (> (crosses-gaps-aggregate (files-in-dir dir "individual[0-9]+.bin")) 0)
+                                                 1.0
+                                                 0.0)) (cdr args))))
+         (format #t "Total success rate is ~1,2f percent.~%" (* 100 p)))
+       (crosses-gaps-aggregate args))
+   (quit)))
+
+
