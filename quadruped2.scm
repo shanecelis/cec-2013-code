@@ -9,6 +9,13 @@
              (gnuplot plot)
              (logging)
              (srfi srfi-26) ;cut
+             (ice-9 match)
+             (osc-event)
+             (scene-smob)
+             (physics-buffer)
+             (bullet)
+             (util)
+             (guile-user)
              )
 (define pi (acos -1))
 
