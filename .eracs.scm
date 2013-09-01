@@ -7,9 +7,12 @@
              (system repl server)
              (zeroconf)
              (osc)
-             (emacsy emacsy)
+             ((emacsy emacsy) #:hide (state position))
              (statprof)
-             (logging))
+             (logging)
+             (leapmotion-event)
+             (leapmotion-commands)
+             )
 
 (define-interactive (reload-log-config)
   (log4c-reread))
@@ -42,7 +45,7 @@
                     (apply mylog "emacsy" pri-debug  format-msg args)))
 
 (set! *random-state* (random-state-from-platform))
-(set! debug-on-error? #f)
+(set! debug-on-error? #t)
 ; (use-modules (system vm trace))
 ; (trace-calls-to-procedure make-stack)
 (set! %load-hook (lambda (filename)
@@ -96,3 +99,9 @@
 ;(load "experiment-max-speed-1.dat")
 ;<gen-count-vs-select-attn-dummy>
 ;(primitive-load "experiment-max-speed-1.dat")
+
+(call-with-new-thread (lambda () 
+                        (leapmotion-event-init)
+                        #f
+                        ))
+

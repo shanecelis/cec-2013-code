@@ -152,6 +152,9 @@
    (time-loop-value-set! robot new-time)
    (message "Controller time ~1,2f" new-time)))
 
+(define-key eracs-mode-map (kbd "osc-2-time-slider")  'goto-time)
+
+
 (define-interactive (read-time #:optional (value #f))
   "Read the a [0, 1] time from user through either the current OSC
 event or an input."
