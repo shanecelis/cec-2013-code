@@ -68,6 +68,8 @@
   (nn-brain #:accessor nn-brain #:init-form (make-nn neuron-count))
   (robot-time-param #:accessor robot-time-param #:init-form #f))
 
+(export target-angles robot)
+
 (define-method (robot-time (robot <quadruped>))
   (or (robot-time-param robot) 
       (and (in-sim robot) (sim-time (in-sim robot)))))
@@ -149,7 +151,9 @@
                                    
                                    ) 
                   #:joints joints
-                  #:controller hand-coded-brain) ;low-level-brain
+                  #:controller #;hand-coded-brain
+                  low-level-brain
+                  ) 
                 ))
     
     ;; XXX - The contact function is a closure that contains the robot.

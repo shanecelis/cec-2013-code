@@ -51,7 +51,8 @@
 (set! %load-hook (lambda (filename)
                    (mylog "load" pri-debug "Loading ~a .." filename)))
 (define profile? #f)
-(define spawn-threads? #f)
+(define spawn-threads? #t)
+(define use-osc? #f)
 
 (define (stop-profiling)
     (statprof-stop)
@@ -65,9 +66,10 @@
 ;; Let's start a REPL.
 (when (and spawn-threads? (not eracs-batch?))
   (spawn-server)
-;; Let's start the OSC server and publish it.
-  (start-osc-server)
-  (spawn-publish-service "" "_osc._udp." "ERACS" 7770)
+  (when use-osc?
+   ;; Let's start the OSC server and publish it.
+    (start-osc-server)
+    (spawn-publish-service "" "_osc._udp." "ERACS" 7770))
   ;; CTRL-c should still work but it doesn't after some threads are spawned.
   ;; This next line fixes that.
   #;(restore-signals))
@@ -100,8 +102,10 @@
 ;<gen-count-vs-select-attn-dummy>
 ;(primitive-load "experiment-max-speed-1.dat")
 
-(call-with-new-thread (lambda () 
+#;(call-with-new-thread (lambda () 
                         (leapmotion-event-init)
                         #f
                         ))
+
+(add-hook! physics-tick-hook (make-leapmotion-poller))
 
